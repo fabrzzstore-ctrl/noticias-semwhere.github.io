@@ -1,0 +1,36 @@
+# Gera e publica o site no GitHub Pages sempre que há alterações no ramo main.
+name: Publicar o blog
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependências
+        run: |
+          sudo apt-get update && sudo apt-get install -y fonts-crosextra-caladea fonts-inter
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Gerar o site
+        run: python build.py --og
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deploy
+        uses: actions/deploy-pages@v4
